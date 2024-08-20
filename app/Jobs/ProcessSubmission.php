@@ -9,6 +9,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use PDOException;
 
 class ProcessSubmission implements ShouldQueue
 {
@@ -27,8 +29,14 @@ class ProcessSubmission implements ShouldQueue
      */
     public function handle(): void
     {
-        $submission = Submission::create($this->data);
-
-        event(new SubmissionSaved($submission));
+        try {
+            $submission = Submission::create($this->data);
+            event(new SubmissionSaved($submission));
+        } catch (PDOException $exception) {
+            Log::error('Failed with database process submission.', [
+                'error' => $exception->getMessage(),
+                'data' => $this->data
+            ]);
+        }
     }
 }
